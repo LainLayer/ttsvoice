@@ -8,6 +8,7 @@ using CSCore.SoundOut;
 using System.IO;
 using CSCore.MediaFoundation;
 using CSCore;
+using System.Threading;
 
 namespace tts3
 {
@@ -21,12 +22,14 @@ namespace tts3
 
         const int SW_HIDE = 0;
 
+        
 
         public static void Main(string[] args)
         {
             var handle = GetConsoleWindow();
 
-
+            
+            
             ContextMenu contextMenu1 = new ContextMenu();
             
 
@@ -49,8 +52,7 @@ namespace tts3
             });
 
 
-            contextMenu1.MenuItems.AddRange(
-                    new MenuItem[] { menuItem1 });
+            contextMenu1.MenuItems.AddRange(new MenuItem[] { menuItem1 });
 
 
             var api = new KeystrokeAPI();
@@ -71,21 +73,38 @@ namespace tts3
 
             var stream = new MemoryStream();
 
-
+            
 
             var waveOut = new WaveOut { Device = new WaveOutDevice(deviceId) };
+
+            
 
             api.CreateKeyboardHook((character) =>
             {
                 if ((int)character.KeyCode == 114)
                 {
+                    
                     stream = new MemoryStream(stream.Capacity);
+
                     synth.SetOutputToWaveStream(stream);
-                    synth.Speak(ShowDialog("TTS window"));
+
+                    string text = ShowDialog();
+
+                    if (text == "")
+                        goto Finish;
+
+                    synth.Speak(text);
+
+                    waveOut.Stop();
                     var waveSource = new MediaFoundationDecoder(stream);
-                    waveOut.Initialize(waveSource);
-                    waveOut.Play();
-                    waveOut.WaitForStopped();
+                    Thread t = new Thread(() => {
+                        waveOut.Initialize(waveSource);
+                        waveOut.Play();
+                        waveOut.WaitForStopped();
+                    });
+                    t.Start();
+
+                Finish:;
                 }
             });
 
@@ -93,26 +112,43 @@ namespace tts3
             Console.ReadKey();
         }
 
-        public static string ShowDialog(string caption)
+        public static string ShowDialog()
         {
+            if (Application.OpenForms.Count > 0)
+                return "";
+
             Form prompt = new Form()
             {
                 Width = 300,
                 Height = 40,
                 FormBorderStyle = FormBorderStyle.None,
-                Text = caption,
                 StartPosition = FormStartPosition.CenterScreen,
                 BackColor = Color.Gray
             };
-            TextBox textBox = new TextBox() { Left = 1, Top = 1, Width = 297, BackColor = Color.Black, ForeColor = Color.Beige, Font = new Font(prompt.Font.FontFamily, 24) };
+            TextBox textBox = new TextBox() { Left = 1, Top = 1, Width = 298, BackColor = Color.Black, ForeColor = Color.Beige, Font = new Font(prompt.Font.FontFamily, 24) };
             prompt.Height = textBox.Height + 2;
             Button confirmation = new Button() { Text = "Ok", Left = 0, Width = 0, Top = 0, DialogResult = DialogResult.OK, Height = 0 };
-            confirmation.Click += (sender, e) => { prompt.Close(); };
+            confirmation.Click += (sender, e) => prompt.Close();
             prompt.Controls.Add(textBox);
             prompt.Controls.Add(confirmation);
             prompt.AcceptButton = confirmation;
+            prompt.CancelButton = confirmation;
 
-            return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
+            textBox.KeyPress += (sender, e) => {
+                int txtw = TextRenderer.MeasureText(textBox.Text, textBox.Font).Width;
+                if (txtw > textBox.Width)
+                {
+                    prompt.Width = txtw + 2;
+                    textBox.Width = txtw;
+                    prompt.Location = new Point((Screen.PrimaryScreen.WorkingArea.Width - prompt.Width) / 2,
+                          (Screen.PrimaryScreen.WorkingArea.Height - prompt.Height) / 2);
+                }
+            };
+
+            string text = prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
+            prompt.WindowState = FormWindowState.Normal;
+            return text;
+
         }
 
     }
