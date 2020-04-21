@@ -34,7 +34,7 @@ namespace tts3
             {
                 Icon = Properties.Resources.icon,
                 ContextMenu = contextMenu1,
-                Text = "Form1 (NotifyIcon example)",
+                Text = "ttsvoice is running...",
                 Visible = true
             };
 
