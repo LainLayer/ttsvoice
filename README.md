@@ -10,6 +10,8 @@ ttsvoice is a C# program that allows the user to speak into any audio device wit
 * Type any text
 * Press Enter
 
+The intended usecase is via a seperate virtual audio device, set as your output in ttsvoice, and input in whatever software you wish to communicate in.
+
 ### closing
 * Right click on taskbar icon
 * Click "Exit"
