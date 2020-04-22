@@ -47,64 +47,58 @@ namespace tts3
                 Text = "E&xit",
             };
 
-            menuItem1.Click += new EventHandler((object Sender, EventArgs e) => {
-                Environment.Exit(1);
-            });
-
+            menuItem1.Click += new EventHandler((sender, e) => Environment.Exit(1));
 
             contextMenu1.MenuItems.AddRange(new MenuItem[] { menuItem1 });
 
 
-            var api = new KeystrokeAPI();
-            SpeechSynthesizer synth = new SpeechSynthesizer();
-
-            synth.SelectVoiceByHints(VoiceGender.Female);
+            
+            
 
 
             Console.WriteLine("Available devices:");
             foreach (var device in WaveOutDevice.EnumerateDevices())
-            {
                 Console.WriteLine("{0}: {1}", device.DeviceId, device.Name);
-            }
+            
             Console.WriteLine("\nEnter device for speech output:");
             var deviceId = (int)char.GetNumericValue(Console.ReadKey().KeyChar);
+
+
+
             ShowWindow(handle, SW_HIDE);
 
 
-            var stream = new MemoryStream();
+            MemoryStream stream = new MemoryStream();
+            SpeechSynthesizer synth = new SpeechSynthesizer();
+            synth.SelectVoiceByHints(VoiceGender.Female);
+            WaveOut waveOut = new WaveOut { Device = new WaveOutDevice(deviceId) };
 
-            
 
-            var waveOut = new WaveOut { Device = new WaveOutDevice(deviceId) };
-
-            
-
-            api.CreateKeyboardHook((character) =>
+            new KeystrokeAPI().CreateKeyboardHook((character) =>
             {
                 if ((int)character.KeyCode == 114)
                 {
-                    
+
                     stream = new MemoryStream(stream.Capacity);
 
                     synth.SetOutputToWaveStream(stream);
 
                     string text = ShowDialog();
 
-                    if (text == "")
-                        goto Finish;
+                    if (text != "")
+                    {
+                        synth.Speak(text);
 
-                    synth.Speak(text);
+                        waveOut.Stop();
+                        var waveSource = new MediaFoundationDecoder(stream);
+                        new Thread(() =>
+                        {
+                            waveOut.Initialize(waveSource);
+                            waveOut.Play();
+                            waveOut.WaitForStopped();
+                        }).Start();
 
-                    waveOut.Stop();
-                    var waveSource = new MediaFoundationDecoder(stream);
-                    Thread t = new Thread(() => {
-                        waveOut.Initialize(waveSource);
-                        waveOut.Play();
-                        waveOut.WaitForStopped();
-                    });
-                    t.Start();
-
-                Finish:;
+                    }
                 }
             });
 
@@ -123,16 +117,34 @@ namespace tts3
                 Height = 40,
                 FormBorderStyle = FormBorderStyle.None,
                 StartPosition = FormStartPosition.CenterScreen,
-                BackColor = Color.Gray
+                BackColor = Color.Gray,
+                WindowState = FormWindowState.Normal
+        };
+
+            TextBox textBox = new TextBox() {
+                Left = 1,
+                Top = 1,
+                Width = 298,
+                BackColor = Color.Black,
+                ForeColor = Color.Beige,
+                Font = new Font(prompt.Font.FontFamily, 24)
             };
-            TextBox textBox = new TextBox() { Left = 1, Top = 1, Width = 298, BackColor = Color.Black, ForeColor = Color.Beige, Font = new Font(prompt.Font.FontFamily, 24) };
+
             prompt.Height = textBox.Height + 2;
-            Button confirmation = new Button() { Text = "Ok", Left = 0, Width = 0, Top = 0, DialogResult = DialogResult.OK, Height = 0 };
+
+            Button confirmation = new Button() {
+                Text = "Ok",
+                Left = 0,
+                Width = 0,
+                Top = 0,
+                DialogResult = DialogResult.OK,
+                Height = 0
+            };
+
             confirmation.Click += (sender, e) => prompt.Close();
             prompt.Controls.Add(textBox);
             prompt.Controls.Add(confirmation);
-            prompt.AcceptButton = confirmation;
-            prompt.CancelButton = confirmation;
+            prompt.AcceptButton = prompt.CancelButton = confirmation;
 
             textBox.KeyPress += (sender, e) => {
                 int txtw = TextRenderer.MeasureText(textBox.Text, textBox.Font).Width;
@@ -145,10 +157,7 @@ namespace tts3
                 }
             };
 
-            string text = prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
-            prompt.WindowState = FormWindowState.Normal;
-            return text;
-
+            return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
         }
 
     }
