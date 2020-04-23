@@ -1,0 +1,6 @@
+language: csharp
+dotnet: 4.7.2
+solution: tts3.sln
+script:
+  - dotnet restore
+  - dotnet test
