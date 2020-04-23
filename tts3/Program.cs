@@ -2,7 +2,6 @@
 using System.Speech.Synthesis;
 using System.Windows.Forms;
 using Keystroke.API;
-using System.Drawing;
 using System.Runtime.InteropServices;
 using CSCore.SoundOut;
 using System.IO;
@@ -12,7 +11,7 @@ using System.Threading;
 
 namespace tts3
 {
-    class Program
+    public class Program
     {
         [DllImport("kernel32.dll")]
         static extern IntPtr GetConsoleWindow();
@@ -24,40 +23,14 @@ namespace tts3
 
         
 
-        public static void Main(string[] args)
+        public static void Main()
         {
+            GuiHandler gui = new GuiHandler();
             var handle = GetConsoleWindow();
-
-            
-            
-            ContextMenu contextMenu1 = new ContextMenu();
-            
-
-            NotifyIcon notifyIcon1 = new NotifyIcon(new System.ComponentModel.Container())
-            {
-                Icon = Properties.Resources.icon,
-                ContextMenu = contextMenu1,
-                Text = "ttsvoice is running...",
-                Visible = true
-            };
-
-           
-            MenuItem menuItem1 = new MenuItem { 
-                Index = 0,
-                Text = "E&xit",
-            };
-
-            menuItem1.Click += new EventHandler((sender, e) => Environment.Exit(1));
-
-            contextMenu1.MenuItems.AddRange(new MenuItem[] { menuItem1 });
-
-
-            
-            
 
 
             Console.WriteLine("Available devices:");
-            foreach (var device in WaveOutDevice.EnumerateDevices())
+            foreach (WaveOutDevice device in WaveOutDevice.EnumerateDevices())
                 Console.WriteLine("{0}: {1}", device.DeviceId, device.Name);
             
             Console.WriteLine("\nEnter device for speech output:");
@@ -67,10 +40,22 @@ namespace tts3
 
             ShowWindow(handle, SW_HIDE);
 
+            gui.CreateTaskBarIcon();
+            gui.AddMenuOption("E&xit", (sender, e) => Environment.Exit(0));
+
 
             MemoryStream stream = new MemoryStream();
             SpeechSynthesizer synth = new SpeechSynthesizer();
             synth.SelectVoiceByHints(VoiceGender.Female);
+
+            foreach (InstalledVoice f in synth.GetInstalledVoices())
+            {
+                gui.AddMenuOption("Se&t voice to " + f.VoiceInfo.Name,
+                    (sender, e) => synth.SelectVoice(f.VoiceInfo.Name)
+                );
+                
+            }
+
             WaveOut waveOut = new WaveOut { Device = new WaveOutDevice(deviceId) };
 
 
@@ -83,16 +68,16 @@ namespace tts3
 
                     synth.SetOutputToWaveStream(stream);
 
-                    string text = ShowDialog();
+                    string text = GuiHandler.GetUserInput();
 
                     if (text != "")
                     {
                         synth.Speak(text);
 
-                        waveOut.Stop();
                         var waveSource = new MediaFoundationDecoder(stream);
                         new Thread(() =>
                         {
+                            waveOut.WaitForStopped();
                             waveOut.Initialize(waveSource);
                             waveOut.Play();
                             waveOut.WaitForStopped();
@@ -103,61 +88,7 @@ namespace tts3
             });
 
             Application.Run();
-            Console.ReadKey();
-        }
-
-        public static string ShowDialog()
-        {
-            if (Application.OpenForms.Count > 0)
-                return "";
-
-            Form prompt = new Form()
-            {
-                Width = 300,
-                Height = 40,
-                FormBorderStyle = FormBorderStyle.None,
-                StartPosition = FormStartPosition.CenterScreen,
-                BackColor = Color.Gray,
-                WindowState = FormWindowState.Normal
-        };
-
-            TextBox textBox = new TextBox() {
-                Left = 1,
-                Top = 1,
-                Width = 298,
-                BackColor = Color.Black,
-                ForeColor = Color.Beige,
-                Font = new Font(prompt.Font.FontFamily, 24)
-            };
-
-            prompt.Height = textBox.Height + 2;
-
-            Button confirmation = new Button() {
-                Text = "Ok",
-                Left = 0,
-                Width = 0,
-                Top = 0,
-                DialogResult = DialogResult.OK,
-                Height = 0
-            };
-
-            confirmation.Click += (sender, e) => prompt.Close();
-            prompt.Controls.Add(textBox);
-            prompt.Controls.Add(confirmation);
-            prompt.AcceptButton = prompt.CancelButton = confirmation;
-
-            textBox.KeyPress += (sender, e) => {
-                int txtw = TextRenderer.MeasureText(textBox.Text, textBox.Font).Width;
-                if (txtw > textBox.Width)
-                {
-                    prompt.Width = txtw + 2;
-                    textBox.Width = txtw;
-                    prompt.Location = new Point((Screen.PrimaryScreen.WorkingArea.Width - prompt.Width) / 2,
-                          (Screen.PrimaryScreen.WorkingArea.Height - prompt.Height) / 2);
-                }
-            };
-
-            return prompt.ShowDialog() == DialogResult.OK ? textBox.Text : "";
+            while (true) { }
         }
 
     }
