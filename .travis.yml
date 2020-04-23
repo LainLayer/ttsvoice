@@ -1,5 +1,5 @@
 language: csharp
-mono: 3.8.0
+mono: none
 os: windows
 dotnet: 4.7.2
 solution: tts3.sln
