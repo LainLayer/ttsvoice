@@ -1,7 +1,7 @@
 language: csharp
 mono: none
 os: windows
-dotnet: 4.7.2
+dotnet: latest
 solution: tts3.sln
 script:
   - dotnet restore
