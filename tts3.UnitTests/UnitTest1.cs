@@ -40,15 +40,16 @@ namespace tts3.UnitTests
         [TestMethod]
         public void ThreadPlaySpeech()
         {
-
+            SpeechSynthesizer synth = new SpeechSynthesizer();
+            synth.SelectVoiceByHints(VoiceGender.Female);
+            
 
             Thread[] threads = new Thread[10];
 
 
             for (int i = 0; i < 10; i++)
             {
-                SpeechSynthesizer synth = new SpeechSynthesizer();
-                synth.SelectVoiceByHints(VoiceGender.Female);
+
                 WaveOut waveOut = new WaveOut { Device = new WaveOutDevice(0) };
                 MemoryStream stream = new MemoryStream();
                 synth.SetOutputToWaveStream(stream);

@@ -56,7 +56,7 @@ namespace tts3
                 
             }
 
-            WaveOut waveOut = new WaveOut { Device = new WaveOutDevice(deviceId) };
+            
 
 
             new KeystrokeAPI().CreateKeyboardHook((character) =>
@@ -64,6 +64,7 @@ namespace tts3
                 if ((int)character.KeyCode == 114)
                 {
 
+                    WaveOut waveOut = new WaveOut { Device = new WaveOutDevice(deviceId) };
                     stream = new MemoryStream(stream.Capacity);
 
                     synth.SetOutputToWaveStream(stream);
