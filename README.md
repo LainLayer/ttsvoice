@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/LainLayer/ttsvoice.svg?branch=master)](https://travis-ci.com/LainLayer/ttsvoice)
+
 # ttsvoice
 
 ttsvoice is a C# program that allows the user to speak into any audio device with a voice synthesizer.
