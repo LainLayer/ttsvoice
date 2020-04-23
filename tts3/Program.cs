@@ -44,7 +44,7 @@ namespace tts3
             gui.AddMenuOption("E&xit", (sender, e) => Environment.Exit(0));
 
 
-            MemoryStream stream = new MemoryStream();
+            
             SpeechSynthesizer synth = new SpeechSynthesizer();
             synth.SelectVoiceByHints(VoiceGender.Female);
 
@@ -65,7 +65,9 @@ namespace tts3
                 {
 
                     WaveOut waveOut = new WaveOut { Device = new WaveOutDevice(deviceId) };
-                    stream = new MemoryStream(stream.Capacity);
+
+                    MemoryStream stream = new MemoryStream();
+
 
                     synth.SetOutputToWaveStream(stream);
 
