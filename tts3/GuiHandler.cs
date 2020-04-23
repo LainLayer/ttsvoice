@@ -56,7 +56,7 @@ namespace tts3
                 FormBorderStyle = FormBorderStyle.None,
                 StartPosition = FormStartPosition.CenterScreen,
                 BackColor = Color.Gray,
-                WindowState = FormWindowState.Normal
+                Icon = Properties.Resources.icon
             };
 
             TextBox textBox = new TextBox()
@@ -67,6 +67,13 @@ namespace tts3
                 BackColor = Color.Black,
                 ForeColor = Color.Beige,
                 Font = new Font(prompt.Font.FontFamily, 24)
+            };
+
+
+            prompt.Activated += (sender, e) =>
+            {
+                prompt.WindowState = FormWindowState.Normal;
+                textBox.Focus();
             };
 
             prompt.Height = textBox.Height + 2;
