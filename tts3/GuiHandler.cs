@@ -1,14 +1,22 @@
 ﻿using System;
 using System.Drawing;
+using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace tts3
 {
     public class GuiHandler
     {
+
+        [DllImport("user32.dll")]
+        static extern int GetForegroundWindow();
+
+        [DllImport("user32.dll")]
+        static extern bool SetForegroundWindow(IntPtr hWnd);
+
         ContextMenu contextMenu1;
 
-        private static int index;
+        private static int index, prevWindowHandle;
 
         public GuiHandler() {
             contextMenu1 = new ContextMenu();
@@ -72,8 +80,14 @@ namespace tts3
 
             prompt.Activated += (sender, e) =>
             {
+                prevWindowHandle = GetForegroundWindow();
                 prompt.WindowState = FormWindowState.Normal;
                 textBox.Focus();
+            };
+
+            prompt.Deactivate += (sender, e) =>
+            {
+                SetForegroundWindow((IntPtr)prevWindowHandle);
             };
 
             prompt.Height = textBox.Height + 2;
